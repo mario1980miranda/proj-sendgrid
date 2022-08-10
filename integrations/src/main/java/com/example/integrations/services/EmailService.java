@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.example.integrations.dto.EmailDTO;
+import com.example.integrations.services.exceptions.EmailException;
 import com.sendgrid.Method;
 import com.sendgrid.Request;
 import com.sendgrid.Response;
@@ -18,7 +19,7 @@ import com.sendgrid.helpers.mail.objects.Email;
 
 @Service
 public class EmailService {
-	
+
 	private static Logger LOG = LoggerFactory.getLogger(EmailService.class);
 
 	@Autowired
@@ -39,16 +40,19 @@ public class EmailService {
 			request.setBody(mail.build());
 
 			LOG.info("Sending email to " + dto.getTo());
-			
+
 			Response response = sendGrid.api(request);
-			
+
 			if (response.getStatusCode() >= 400 && response.getStatusCode() <= 500) {
 				LOG.error("Error sending email: " + response.getBody());
-			} else {
-				LOG.info("Email sent! Status: " + response.getStatusCode());
+				throw new EmailException(request.getBody());
 			}
+			
+			LOG.info("Email sent! Status: " + response.getStatusCode());
+			
 		} catch (IOException ex) {
-			ex.printStackTrace();
+			
+			throw new EmailException(ex.getMessage());
 		}
 	}
 }
